@@ -10,75 +10,31 @@ app.use((req, res, next) => {
 });
 
 // ======================
-// ДАННЫЕ (ИЗ ТВОЕЙ ТАБЛИЦЫ)
+// TIMEZONE (КИЕВ)
 // ======================
-const trains = [
-  {
-    number: "61",
-    route: "Івано-Франківськ → Дніпро",
-    time: "10:50",
-    schedule: [
-      { from: "2026-02-02", to: "2026-03-30", parity: "even" },
-      { from: "2026-04-01", to: "2026-05-31", parity: "odd" }
-    ],
-    exceptions: [
-      "2026-03-10","2026-03-12","2026-03-22","2026-03-24","2026-03-26",
-      "2026-04-03","2026-04-05","2026-04-07","2026-04-09"
-    ]
-  },
-  {
-    number: "61",
-    route: "Івано-Франківськ → Дніпро (зміни)",
-    time: "11:13",
-    specificDates: ["2026-04-03","2026-04-05","2026-04-07","2026-04-09"]
-  },
-  {
-    number: "41",
-    route: "Дніпро → Трускавець",
-    time: "18:07",
-    schedule: [
-      { from: "2026-02-01", to: "2026-03-31", parity: "odd" }
-    ],
-    exceptions: [
-      "2026-03-09","2026-03-11","2026-03-21",
-      "2026-03-23","2026-03-25","2026-03-27"
-    ]
-  },
-  {
-    number: "42",
-    route: "Трускавець → Дніпро",
-    time: "07:46",
-    specificDates: [
-      "2026-03-22","2026-03-24","2026-03-26","2026-03-28"
-    ]
-  },
-  {
-    number: "261",
-    route: "Дніпро → Чернівці",
-    time: "15:46",
-    specificDates: [
-      "2026-03-21","2026-03-23","2026-03-25","2026-03-27"
-    ]
-  },
-  {
-    number: "262",
-    route: "Чернівці → Дніпро",
-    time: "10:50",
-    specificDates: [
-      "2026-03-22","2026-03-24","2026-03-26"
-    ]
-  }
-];
+function getKyivNow() {
+  const now = new Date();
 
-// ======================
-// УТИЛИТЫ
-// ======================
-function getTodayStr() {
-  return new Date().toLocaleDateString("en-CA");
+  const kyiv = new Date(
+    now.toLocaleString("en-US", { timeZone: "Europe/Kyiv" })
+  );
+
+  return kyiv;
 }
 
+function getTodayStr() {
+  return getKyivNow().toLocaleDateString("en-CA");
+}
+
+// ======================
+// ДАННЫЕ (оставь свои)
+// ======================
+const trains = [/* твои поезда */];
+
+// ======================
+// ПРОВЕРКА
+// ======================
 function runsToday(train, todayStr) {
-  // конкретные даты
   if (train.specificDates) {
     return train.specificDates.includes(todayStr);
   }
@@ -105,13 +61,14 @@ function runsToday(train, todayStr) {
 // API
 // ======================
 app.get("/schedule", (req, res) => {
-  const now = new Date();
+  const now = getKyivNow(); // ← ВАЖНО
   const todayStr = getTodayStr();
 
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
   const result = trains.map(train => {
     const [h, m] = train.time.split(":");
+
     const trainMinutes = parseInt(h) * 60 + parseInt(m);
     const diff = trainMinutes - currentMinutes;
 
@@ -138,6 +95,7 @@ app.get("/schedule", (req, res) => {
   res.json({
     station: "Вільногірськ",
     date: todayStr,
+    time: now.toLocaleTimeString("uk-UA"),
     trains: result
   });
 });
