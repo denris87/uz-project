@@ -7,27 +7,17 @@ app.get("/", (req, res) => {
   res.send("Сервер работает 🚀");
 });
 
+// 🚆 расписание (демо, но рабочее)
 app.get("/schedule", async (req, res) => {
   try {
     const response = await axios.get(
-      "https://api.allorigins.win/get?url=" +
-        encodeURIComponent(
-          "https://booking.uz.gov.ua/train_search/station/?term=Вільногірськ"
-        ),
-      { timeout: 10000 }
+      "https://transport.opendata.ch/v1/stationboard?station=Kyiv&limit=10"
     );
 
-    const data = JSON.parse(response.data.contents);
-
-    res.json(data);
+    res.json(response.data);
 
   } catch (error) {
-    console.log("ERROR:", error.message);
-
-    res.json({
-      error: true,
-      message: "UZ blocked request, but server works"
-    });
+    res.json({ error: true, message: error.message });
   }
 });
 
