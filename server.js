@@ -1,74 +1,62 @@
-<script>
-let trainsData = [];
+const express = require("express");
 
-// часы (без секунд)
-function updateClock() {
-  const now = new Date();
-  document.getElementById("clock").innerText =
-    now.toLocaleTimeString("uk-UA", {
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// ======================
+// CORS
+// ======================
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  next();
+});
+
+// ======================
+// ВРЕМЯ (КИЕВ)
+// ======================
+function getKyivNow() {
+  return new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Europe/Kyiv" })
+  );
+}
+
+// ======================
+// ДАННЫЕ ПОЕЗДОВ
+// ======================
+const trains = [
+  { number: "42", route: "Трускавець → Дніпро", time: "07:46" },
+  { number: "61", route: "Івано-Франківськ → Дніпро", time: "10:50" },
+  { number: "262", route: "Чернівці → Дніпро", time: "10:50" },
+  { number: "261", route: "Дніпро → Чернівці", time: "15:46" },
+  { number: "41", route: "Дніпро → Трускавець", time: "18:07" }
+];
+
+// ======================
+// ГЛАВНАЯ
+// ======================
+app.get("/", (req, res) => {
+  res.send("🚆 Сервер табло працює");
+});
+
+// ======================
+// API
+// ======================
+app.get("/schedule", (req, res) => {
+  const now = getKyivNow();
+
+  res.json({
+    station: "Вільногірськ",
+    time: now.toLocaleTimeString("uk-UA", {
       hour: "2-digit",
       minute: "2-digit"
-    });
-}
-
-// рендер
-function render() {
-  const list = document.getElementById("list");
-
-  if (!list) return;
-
-  if (!trainsData || trainsData.length === 0) {
-    list.innerHTML = "❌ Немає даних";
-    return;
-  }
-
-  let html = "";
-
-  trainsData.forEach(train => {
-    html += `
-      <div class="row">
-        <div>${train.number || "-"}</div>
-        <div class="route">${train.route || "-"}</div>
-        <div>${train.time || "--:--"}</div>
-      </div>
-    `;
+    }),
+    trains: trains
   });
-
-  list.innerHTML = html;
-}
-
-// загрузка
-async function load() {
-  try {
-    const res = await fetch("https://grateful-enthusiasm-production-c1cc.up.railway.app/schedule");
-
-    if (!res.ok) throw new Error("HTTP error");
-
-    const data = await res.json();
-
-    if (!data || !Array.isArray(data.trains)) {
-      throw new Error("Немає trains");
-    }
-
-    trainsData = data.trains;
-
-    render();
-  } catch (err) {
-    console.error("LOAD ERROR:", err);
-    const list = document.getElementById("list");
-    if (list) list.innerHTML = "⚠️ Помилка завантаження";
-  }
-}
+});
 
 // ======================
 // ЗАПУСК
 // ======================
-
-// сразу
-updateClock();
-load();
-
-// интервалы
-setInterval(updateClock, 1000);
-setInterval(load, 30000);
-</script>
+app.listen(PORT, () => {
+  console.log("🚀 Server running on port " + PORT);
+});
