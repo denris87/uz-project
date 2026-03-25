@@ -1,12 +1,3 @@
-const express = require("express");
-const axios = require("axios");
-
-const app = express();
-
-app.get("/", (req, res) => {
-  res.send("Сервер работает 🚀");
-});
-
 app.get("/schedule", async (req, res) => {
   try {
     const url = "https://booking.uz.gov.ua/train_search/station/?term=Вільногірськ";
@@ -15,16 +6,11 @@ app.get("/schedule", async (req, res) => {
       "https://api.allorigins.win/raw?url=" + encodeURIComponent(url)
     );
 
-    res.json(response.data);
+    // 🔥 безопасная отправка
+    res.send(response.data);
 
   } catch (error) {
-    console.log(error.message);
-    res.json({ error: true });
+    console.log("ERROR:", error.message);
+    res.send("Ошибка загрузки данных");
   }
-});
-
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log("🚀 Server started");
 });
