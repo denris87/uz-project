@@ -1,10 +1,7 @@
 const express = require("express");
 const axios = require("axios");
-const cors = require("cors");
 
 const app = express();
-
-app.use(cors()); // 🔥 ВАЖНО
 
 app.get("/", (req, res) => {
   res.send("Сервер работает 🚀");
@@ -16,9 +13,10 @@ app.get("/schedule", async (req, res) => {
       method: "GET",
       url: "https://booking.uz.gov.ua/train_search/station/?term=Вільногірськ",
       headers: {
-        "User-Agent": "Mozilla/5.0",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         "Accept": "application/json",
-        "Accept-Language": "uk-UA"
+        "Accept-Language": "uk-UA,uk;q=0.9",
+        "Connection": "keep-alive"
       }
     });
 
@@ -26,10 +24,12 @@ app.get("/schedule", async (req, res) => {
 
   } catch (error) {
     console.log(error.message);
-    res.send({ error: true });
+    res.json({ error: true, message: error.message });
   }
 });
 
-app.listen(3000, () => {
-  console.log("🚀 http://localhost:3000");
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("🚀 Server started");
 });
