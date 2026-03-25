@@ -2,7 +2,7 @@ const express = require("express");
 
 const app = express();
 
-// CORS (чтобы сайт мог подключаться)
+// ✅ CORS (чтобы сайт видел API)
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   next();
@@ -10,12 +10,12 @@ app.use((req, res, next) => {
 
 const PORT = process.env.PORT;
 
-// главная страница
+// ✅ главная страница
 app.get("/", (req, res) => {
   res.send("🚀 Сервер работает");
 });
 
-// табло поездов
+// ✅ расписание поездов (твои данные)
 app.get("/schedule", (req, res) => {
   const now = new Date();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -45,4 +45,9 @@ app.get("/schedule", (req, res) => {
     station: "Вільногірськ",
     trains: processed
   });
+});
+
+// ✅ запуск сервера
+app.listen(PORT, () => {
+  console.log("✅ Server running on port " + PORT);
 });
