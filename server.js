@@ -1,29 +1,30 @@
-const express = require("express");
-const app = express();
+app.get("/schedule", async (req, res) => {
+  try {
+    const response = await axios.get(
+      "https://booking.uz.gov.ua/train_search/station/",
+      {
+        params: {
+          term: "Вільногірськ"
+        },
+        headers: {
+          "User-Agent": "Mozilla/5.0",
+          "Accept": "application/json, text/javascript, */*; q=0.01",
+          "X-Requested-With": "XMLHttpRequest",
+          "Referer": "https://booking.uz.gov.ua/",
+          "Accept-Language": "uk-UA,uk;q=0.9"
+        },
+        timeout: 10000
+      }
+    );
 
-// CORS
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  next();
-});
+    res.json(response.data);
 
-const PORT = process.env.PORT;
+  } catch (error) {
+    console.log("UZ ERROR:", error.message);
 
-app.get("/", (req, res) => {
-  res.send("OK 🚀");
-});
-
-app.get("/schedule", (req, res) => {
-  res.json({
-    station: "Вільногірськ",
-    trains: [
-      { train: "Дніпро → Київ", time: "08:15", platform: 1 },
-      { train: "Кривий Ріг → Харків", time: "12:40", platform: 2 },
-      { train: "Запоріжжя → Львів", time: "18:05", platform: 1 }
-    ]
-  });
-});
-
-app.listen(PORT, () => {
-  console.log("Server running");
+    res.json({
+      error: true,
+      message: error.message
+    });
+  }
 });
