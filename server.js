@@ -1,9 +1,16 @@
 const express = require("express");
-
 const app = express();
 
+// CORS
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  next();
+});
+
+const PORT = process.env.PORT;
+
 app.get("/", (req, res) => {
-  res.send("Сервер работает 🚀");
+  res.send("OK 🚀");
 });
 
 app.get("/schedule", (req, res) => {
@@ -17,8 +24,6 @@ app.get("/schedule", (req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("🚀 Server started on port " + PORT);
+app.listen(PORT, () => {
+  console.log("Server running");
 });
