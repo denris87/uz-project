@@ -1,3 +1,21 @@
+const express = require("express");
+
+const app = express();
+
+// CORS (чтобы сайт мог подключаться)
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  next();
+});
+
+const PORT = process.env.PORT;
+
+// главная страница
+app.get("/", (req, res) => {
+  res.send("🚀 Сервер работает");
+});
+
+// табло поездов
 app.get("/schedule", (req, res) => {
   const trains = [
     { train: "732 Дніпро → Київ", time: "08:15", platform: 1 },
@@ -9,4 +27,9 @@ app.get("/schedule", (req, res) => {
     station: "Вільногірськ",
     trains: trains
   });
+});
+
+// запуск сервера
+app.listen(PORT, () => {
+  console.log("✅ Server running on port " + PORT);
 });
