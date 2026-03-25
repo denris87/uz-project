@@ -1,72 +1,74 @@
-const express = require("express");
-const app = express();
+<script>
+let trainsData = [];
 
-const PORT = process.env.PORT || 3000;
-
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  next();
-});
-
-// ======================
-// ВРЕМЯ КИЕВ
-// ======================
-function getKyivNow() {
-  return new Date(
-    new Date().toLocaleString("en-US", { timeZone: "Europe/Kyiv" })
-  );
+// часы (без секунд)
+function updateClock() {
+  const now = new Date();
+  document.getElementById("clock").innerText =
+    now.toLocaleTimeString("uk-UA", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
 }
 
-function getTodayStr() {
-  return getKyivNow().toLocaleDateString("en-CA");
+// рендер
+function render() {
+  const list = document.getElementById("list");
+
+  if (!list) return;
+
+  if (!trainsData || trainsData.length === 0) {
+    list.innerHTML = "❌ Немає даних";
+    return;
+  }
+
+  let html = "";
+
+  trainsData.forEach(train => {
+    html += `
+      <div class="row">
+        <div>${train.number || "-"}</div>
+        <div class="route">${train.route || "-"}</div>
+        <div>${train.time || "--:--"}</div>
+      </div>
+    `;
+  });
+
+  list.innerHTML = html;
+}
+
+// загрузка
+async function load() {
+  try {
+    const res = await fetch("https://grateful-enthusiasm-production-c1cc.up.railway.app/schedule");
+
+    if (!res.ok) throw new Error("HTTP error");
+
+    const data = await res.json();
+
+    if (!data || !Array.isArray(data.trains)) {
+      throw new Error("Немає trains");
+    }
+
+    trainsData = data.trains;
+
+    render();
+  } catch (err) {
+    console.error("LOAD ERROR:", err);
+    const list = document.getElementById("list");
+    if (list) list.innerHTML = "⚠️ Помилка завантаження";
+  }
 }
 
 // ======================
-// ДАННЫЕ (УПРОЩЁННЫЕ ДЛЯ СТАБИЛЬНОСТИ)
+// ЗАПУСК
 // ======================
-const trains = [
-  { number: "42", route: "Трускавець → Дніпро", time: "07:46" },
-  { number: "61", route: "Івано-Франківськ → Дніпро", time: "10:50" },
-  { number: "262", route: "Чернівці → Дніпро", time: "10:50" },
-  { number: "261", route: "Дніпро → Чернівці", time: "15:46" },
-  { number: "41", route: "Дніпро → Трускавець", time: "18:07" }
-];
 
-// ======================
-// API
-// ======================
-app.get("/schedule", (req, res) => {
-  const now = getKyivNow();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+// сразу
+updateClock();
+load();
 
-  const result = trains.map(train => {
-    const [h, m] = train.time.split(":");
-
-    const trainMinutes = parseInt(h) * 60 + parseInt(m);
-    const diff = trainMinutes - currentMinutes;
-
-    let status = "later";
-
-    if (diff < 0) status = "gone";
-    else if (diff < 60) status = "soon";
-
-    return {
-      number: train.number,
-      route: train.route,
-      time: train.time,
-      minutesLeft: diff,
-      status,
-      runsToday: true // ВСЕГДА TRUE (чтобы точно работало)
-    };
-  });
-
-  res.json({
-    station: "Вільногірськ",
-    time: now.toLocaleTimeString("uk-UA"),
-    trains: result
-  });
-});
-
-app.listen(PORT, () => {
-  console.log("🚀 Server running on port " + PORT);
-});
+// интервалы
+setInterval(updateClock, 1000);
+setInterval(load, 30000);
+</script>
