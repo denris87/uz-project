@@ -9,23 +9,24 @@ app.get("/", (req, res) => {
 
 app.get("/schedule", async (req, res) => {
   try {
-    const url = "https://booking.uz.gov.ua/train_search/station/?term=Вільногірськ";
+    const response = await axios.get(
+      "https://api.allorigins.win/get?url=" +
+        encodeURIComponent(
+          "https://booking.uz.gov.ua/train_search/station/?term=Вільногірськ"
+        ),
+      { timeout: 10000 }
+    );
 
-    const response = await axios.get(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0",
-      },
-      timeout: 10000
-    });
+    const data = JSON.parse(response.data.contents);
 
-    res.send(response.data);
+    res.json(data);
 
   } catch (error) {
     console.log("ERROR:", error.message);
 
     res.json({
       error: true,
-      message: error.message
+      message: "UZ blocked request, but server works"
     });
   }
 });
