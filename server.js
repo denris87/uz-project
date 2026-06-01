@@ -15,6 +15,9 @@ const PORT = process.env.PORT || 3000;
 // Часовий пояс, у якому рахуються дата та час (незалежно від часового поясу сервера)
 const TIMEZONE = "Europe/Kyiv";
 
+// Шлях до файлу з розкладом
+const SCHEDULE_FILE = "./schedule.yaml";
+
 // Улучшенная функция проверки, которая учитывает конкретные даты (specificDates)
 function runsToday(train, todayStr) {
   if (train.exceptions && train.exceptions.includes(todayStr)) return false;
@@ -41,14 +44,24 @@ function runsToday(train, todayStr) {
   return false;
 }
 
-// Функция для загрузки данных из YAML файла
+// Кеш розкладу: файл перечитується лише коли змінився його час модифікації (mtime)
+let scheduleCache = null;
+let scheduleCacheMtime = 0;
+
+// Функция для загрузки данных из YAML файла (з кешуванням за mtime)
 function loadSchedule() {
   try {
-    const fileContents = fs.readFileSync('./schedule.yaml', 'utf8');
-    return yaml.load(fileContents);
+    const stat = fs.statSync(SCHEDULE_FILE);
+    if (scheduleCache && stat.mtimeMs === scheduleCacheMtime) {
+      return scheduleCache;
+    }
+    const fileContents = fs.readFileSync(SCHEDULE_FILE, "utf8");
+    scheduleCache = yaml.load(fileContents) || { trains: [] };
+    scheduleCacheMtime = stat.mtimeMs;
+    return scheduleCache;
   } catch (e) {
     console.error("Ошибка чтения файла schedule.yaml:", e);
-    return { trains: [] };
+    return scheduleCache || { trains: [] };
   }
 }
 
@@ -74,6 +87,17 @@ function getKyivNow() {
   };
 }
 
+// Перетворює час "HH:MM" у хвилини від опівночі. Повертає null, якщо формат некоректний.
+function parseTimeToMinutes(timeStr) {
+  if (typeof timeStr !== "string") return null;
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  const h = parseInt(match[1]);
+  const m = parseInt(match[2]);
+  if (h > 23 || m > 59) return null;
+  return h * 60 + m;
+}
+
 // Главная
 app.get("/", (req, res) => {
   res.send("🚀 Сервер з розкладом працює (дані завантажуються з YAML)!");
@@ -85,21 +109,21 @@ app.get("/schedule", (req, res) => {
   // Для тестирования можно задать конкретную дату, например: const todayStr = "2026-04-01";
   const { todayStr, currentMinutes } = getKyivNow();
 
-  // Загружаем поезда из файла при каждом запросе
+  // Завантажуємо поїзди (з кешу; файл перечитується лише після його зміни)
   const data = loadSchedule();
   const trains = data.trains || [];
 
   const result = trains.map(train => {
-    const [h, m] = train.time.split(":");
-    const trainMinutes = parseInt(h) * 60 + parseInt(m);
-    const diff = trainMinutes - currentMinutes;
+    const trainMinutes = parseTimeToMinutes(train.time);
+    const hasValidTime = trainMinutes !== null;
+    const diff = hasValidTime ? trainMinutes - currentMinutes : null;
 
-    const isRunning = runsToday(train, todayStr);
+    const isRunning = hasValidTime && runsToday(train, todayStr);
 
     return {
       number: train.number,
       route: train.route,
-      time: train.time,
+      time: train.time || "",
       runsToday: isRunning,
       minutesLeft: diff,
       status: !isRunning
