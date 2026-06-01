@@ -12,6 +12,9 @@ app.use((req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
+// Часовий пояс, у якому рахуються дата та час (незалежно від часового поясу сервера)
+const TIMEZONE = "Europe/Kyiv";
+
 // Улучшенная функция проверки, которая учитывает конкретные даты (specificDates)
 function runsToday(train, todayStr) {
   if (train.exceptions && train.exceptions.includes(todayStr)) return false;
@@ -49,6 +52,28 @@ function loadSchedule() {
   }
 }
 
+// Поточна дата (YYYY-MM-DD) та хвилини від опівночі в часовому поясі Києва,
+// незалежно від часового поясу, у якому запущено сервер.
+function getKyivNow() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(new Date());
+
+  const p = {};
+  for (const part of parts) p[part.type] = part.value;
+
+  return {
+    todayStr: `${p.year}-${p.month}-${p.day}`,
+    currentMinutes: parseInt(p.hour) * 60 + parseInt(p.minute)
+  };
+}
+
 // Главная
 app.get("/", (req, res) => {
   res.send("🚀 Сервер з розкладом працює (дані завантажуються з YAML)!");
@@ -56,10 +81,9 @@ app.get("/", (req, res) => {
 
 // API
 app.get("/schedule", (req, res) => {
-  const now = new Date();
+  // Дата та час рахуються в часовому поясі Києва (Europe/Kyiv), а не сервера.
   // Для тестирования можно задать конкретную дату, например: const todayStr = "2026-04-01";
-  const todayStr = now.toISOString().slice(0, 10);
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const { todayStr, currentMinutes } = getKyivNow();
 
   // Загружаем поезда из файла при каждом запросе
   const data = loadSchedule();
