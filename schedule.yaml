@@ -464,7 +464,7 @@ trains:
 
   - number: "079П"
     route: "Дніпро → Львів"
-    time: "23:59"
+    time: "00:01"
     periodicityText: "з 29/06/2026 щоденно"
     changes: []
     schedule:
