@@ -479,7 +479,7 @@ trains:
       - station: "Кам'янське-Пас."
         time: "23:18"
       - station: "Вільногірськ"
-        time: "23:59"
+        time: "00:01"
       - station: "П'ятихатки"
         time: "00:26"
       - station: "Олександрія"
