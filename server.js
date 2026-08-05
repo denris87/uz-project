@@ -135,7 +135,11 @@ app.get("/schedule", (req, res) => {
         : "later",
       stops: train.stops || [],
       periodicityText: train.periodicityText || "",
-      changes: train.changes || []
+      changes: train.changes || [],
+      // Позначка нового поїзда — фронтенд підсвічує його зеленим
+      isNew: train.isNew === true,
+      badgeText: train.isNew === true ? "НОВИЙ" : "",
+      badgeColor: train.isNew === true ? "green" : ""
     };
   });
 

@@ -129,6 +129,7 @@ trains:
   - number: "119"
     route: "Дніпро → Хелм"
     time: "00:01"
+    isNew: true
     periodicityText: "4–15/08/2026 щоденно"
     changes: []
     schedule:
@@ -239,6 +240,7 @@ trains:
   - number: "87"
     route: "Дніпро → Ковель"
     time: "17:58"
+    isNew: true
     periodicityText: "4,5,6/08/2026; 7–15/08/2026 щоденно"
     changes: []
     schedule:
