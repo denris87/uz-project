@@ -105,6 +105,45 @@ function shiftDate(dateStr, days) {
   return d.toISOString().slice(0, 10);
 }
 
+// Об'єднує поїзди з однаковим часом відправлення з Вільногірська в одну картку.
+// Кожен поїзд групи зберігається у variants — фронтенд показує їх окремо в шторці.
+function mergeSameTime(trains) {
+  const groups = new Map();
+  for (const t of trains) {
+    const key = t.time || `__${groups.size}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(t);
+  }
+
+  const uniq = arr => [...new Set(arr.filter(Boolean))];
+
+  return [...groups.values()].map(group => {
+    if (group.length === 1) return group[0];
+
+    const parts = group.map(t => String(t.route || "").split(" → "));
+    const froms = uniq(parts.map(p => p[0]));
+    const tos = uniq(parts.map(p => p[1]));
+    const running = group.find(t => t.runsToday);
+    const main = running || group[0];
+
+    return {
+      ...main,
+      number: uniq(group.flatMap(t => String(t.number).split("/"))).join("/"),
+      route: `${froms.join(" / ")} → ${tos.join(" / ")}`,
+      runsToday: !!running,
+      status: running ? running.status : "not_running",
+      stops: group[0].stops,
+      periodicityText: group
+        .filter(t => t.periodicityText)
+        .map(t => `№${t.number}: ${t.periodicityText}`)
+        .join("\n"),
+      changes: group.flatMap(t => t.changes.map(c => `№${t.number}: ${c}`)),
+      isNew: group.some(t => t.isNew),
+      variants: group
+    };
+  });
+}
+
 // Главная
 app.get("/", (req, res) => {
   res.send("🚀 Сервер з розкладом працює (дані завантажуються з YAML)!");
@@ -158,7 +197,7 @@ app.get("/schedule", (req, res) => {
   res.json({
     station: "Вільногірськ",
     date: todayStr,
-    trains: result
+    trains: mergeSameTime(result)
   });
 });
 
