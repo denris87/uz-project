@@ -98,6 +98,13 @@ function parseTimeToMinutes(timeStr) {
   return h * 60 + m;
 }
 
+// Зсуває дату "YYYY-MM-DD" на вказану кількість днів
+function shiftDate(dateStr, days) {
+  const d = new Date(dateStr + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 // Главная
 app.get("/", (req, res) => {
   res.send("🚀 Сервер з розкладом працює (дані завантажуються з YAML)!");
@@ -118,7 +125,12 @@ app.get("/schedule", (req, res) => {
     const hasValidTime = trainMinutes !== null;
     const diff = hasValidTime ? trainMinutes - currentMinutes : null;
 
-    const isRunning = hasValidTime && runsToday(train, todayStr);
+    // Періодичність задана за датою відправлення з початкової станції.
+    // dayOffset — на скільки днів пізніше поїзд прибуває на Вільногірськ.
+    const dayOffset = parseInt(train.dayOffset) || 0;
+    const originDateStr = dayOffset ? shiftDate(todayStr, -dayOffset) : todayStr;
+
+    const isRunning = hasValidTime && runsToday(train, originDateStr);
 
     return {
       number: train.number,
